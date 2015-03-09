@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="Build" default="run" basedir=".."
+         xmlns="http://nant.sf.net/release/0.92/nant.xsd">
+  
+  <loadtasks assembly="C:\Program Files\CSG\DevTools\Lib\NAnt\Dev.NAnt.Tasks.dll" />
+  <property name="version" value="3.4.4.0" overwrite="false" />
+  <target name="run">
+    <nuget action="restore" />
+    <msbuild project="RabbitMQDotNetClient.sln">
+      <properties>
+        <property name="PropTargetFramework" value="v4.0" />
+        <property name="PropAssemblyVersion" value="${version}" />
+        <property name="PropUsingMono" value="false" />
+        <property name="PropKeyfile" value="RabbitMQClient.snk" />
+        <property name="PropBuildWcf" value="true" />
+      </properties>
+    </msbuild>
+    
+    <chocopack nuspec="Builds\Ascendon.RabbitMQ.Client.nuspec" version="${version}" feed="csg.oss.nuget" />
+    <chocopush nupkgdir="Artifacts\Publish\csg.oss.nuget" apikey="${csg.oss.nuget.apikey}" source="${csg.oss.nuget}" />
+  </target>
+
+</project>
