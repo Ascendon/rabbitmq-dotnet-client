@@ -105,7 +105,7 @@ function main {
 
 function dist-zips {
     # clean & build
-    dist-target-framework dotnet-3.5
+    dist-target-framework dotnet-4.0
 
     ### Source dist
     src-dist
@@ -152,7 +152,11 @@ function src-dist {
     cp -r lib/nunit tmp/srcdist/lib/
     cp Local.props.example tmp/srcdist/
     cp README.in tmp/srcdist/README
-    links -dump ${WEB_URL}build-dotnet-client.html >> tmp/srcdist/README
+    if [ -n "$NO_LINKS" ]; then
+        touch tmp/srcdist/README
+    else
+        links -dump ${WEB_URL}build-dotnet-client.html >> tmp/srcdist/README
+    fi
     cp-license-to tmp/srcdist/
 
     ### Zip tmp/srcdist making $NAME_VSN the root dir in the archive
@@ -249,7 +253,6 @@ function gendoc-dist {
 
     ### Generate XMLs with ndocproc
     $DOTNET_PROGRAM_PREPEND $RELATIVE_DIR/lib/ndocproc-bin/bin/ndocproc.exe \
-    /nosubtypes \
     $EXTRA_NDOCPROC_ARGS \
     $RELATIVE_DIR/tmp/gendoc/xml \
     $XML_SOURCE_FILE \
