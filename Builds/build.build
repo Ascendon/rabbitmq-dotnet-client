@@ -3,7 +3,10 @@
          xmlns="http://nant.sf.net/release/0.92/nant.xsd">
   
   <loadtasks assembly="C:\Program Files\CSG\DevTools\Lib\NAnt\Dev.NAnt.Tasks.dll" />
-  <property name="version" value="3.4.3.0" overwrite="false" />
+  
+  <initproperty name="version" default="${version::from-tag()}" />
+  <fail if="${version == ''}" message="Either tag the commit or explicitly specify the version" />
+  
   <target name="run">
     <nuget action="restore" />
     <msbuild project="RabbitMQDotNetClient.sln">
