@@ -39,17 +39,26 @@
 //---------------------------------------------------------------------------
 
 using NUnit.Framework;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Exceptions;
 using System;
 using System.Net.Security;
-using RabbitMQ.Client;
+using System.Security.Authentication;
 
 namespace RabbitMQ.Client.Unit
 {
     [TestFixture]
-    public class TestSsl {
+    public class TestSsl
+    {
+        public static string CertificatesDirectory()
+        {
+            return Environment.GetEnvironmentVariable("SSL_CERTS_DIR");
+        }
 
-        public void SendReceive(ConnectionFactory cf) {
-            using (IConnection conn = cf.CreateConnection()) {
+        public void SendReceive(ConnectionFactory cf)
+        {
+            using (IConnection conn = cf.CreateConnection())
+            {
                 IModel ch = conn.CreateModel();
 
                 ch.ExchangeDeclare("Exchange_TestSslEndPoint", ExchangeType.Direct);
@@ -57,7 +66,7 @@ namespace RabbitMQ.Client.Unit
                 ch.QueueBind(qName, "Exchange_TestSslEndPoint", "Key_TestSslEndpoint", null);
 
                 string message = "Hello C# SSL Client World";
-                byte[] msgBytes =  System.Text.Encoding.UTF8.GetBytes(message);
+                byte[] msgBytes = System.Text.Encoding.UTF8.GetBytes(message);
                 ch.BasicPublish("Exchange_TestSslEndPoint", "Key_TestSslEndpoint", null, msgBytes);
 
                 bool noAck = false;
@@ -70,9 +79,14 @@ namespace RabbitMQ.Client.Unit
         }
 
         [Test]
-        public void TestServerVerifiedIgnoringNameMismatch() {
-            string sslDir = Environment.GetEnvironmentVariable("SSL_CERTS_DIR");
-            if (null == sslDir) return;
+        public void TestServerVerifiedIgnoringNameMismatch()
+        {
+            string sslDir = CertificatesDirectory();
+            if (null == sslDir)
+            {
+                Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
+                return;
+            }
 
             ConnectionFactory cf = new ConnectionFactory();
             cf.Ssl.ServerName = "*";
@@ -82,9 +96,14 @@ namespace RabbitMQ.Client.Unit
         }
 
         [Test]
-        public void TestServerVerified() {
-            string sslDir = Environment.GetEnvironmentVariable("SSL_CERTS_DIR");
-            if (null == sslDir) return;
+        public void TestServerVerified()
+        {
+            string sslDir = CertificatesDirectory();
+            if (null == sslDir)
+            {
+                Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
+                return;
+            }
 
             ConnectionFactory cf = new ConnectionFactory();
             cf.Ssl.ServerName = System.Net.Dns.GetHostName();
@@ -93,9 +112,35 @@ namespace RabbitMQ.Client.Unit
         }
 
         [Test]
-        public void TestClientAndServerVerified() {
-            string sslDir = Environment.GetEnvironmentVariable("SSL_CERTS_DIR");
-            if (null == sslDir) return;
+        public void TestVersionVerified()
+        {
+            string sslDir = CertificatesDirectory();
+            if (null == sslDir)
+            {
+                Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
+                return;
+            }
+
+            ConnectionFactory cf = new ConnectionFactory();
+            cf.Ssl.Version = SslProtocols.Ssl2;
+            cf.Ssl.AcceptablePolicyErrors = (SslPolicyErrors)~0;
+            cf.Ssl.ServerName = "*";
+            cf.Ssl.Enabled = true;
+            Assert.Throws<BrokerUnreachableException>(() => SendReceive(cf));
+
+            cf.Ssl.Version = SslProtocols.Default;
+            Assert.DoesNotThrow(() => SendReceive(cf));
+        }
+
+        [Test]
+        public void TestClientAndServerVerified()
+        {
+            string sslDir = CertificatesDirectory();
+            if (null == sslDir)
+            {
+                Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
+                return;
+            }
 
             ConnectionFactory cf = new ConnectionFactory();
             cf.Ssl.ServerName = System.Net.Dns.GetHostName();
@@ -105,6 +150,29 @@ namespace RabbitMQ.Client.Unit
             Assert.IsNotNull(p12Password, "missing PASSWORD env var");
             cf.Ssl.CertPassphrase = p12Password;
             cf.Ssl.Enabled = true;
+            SendReceive(cf);
+        }
+
+        // rabbitmq/rabbitmq-dotnet-client#46, also #44 and #45
+        [Test]
+        public void TestNoClientCertificate()
+        {
+            string sslDir = CertificatesDirectory();
+            if (null == sslDir)
+            {
+                Console.WriteLine("SSL_CERT_DIR is not configured, skipping test");
+                return;
+            }
+
+            ConnectionFactory cf = new ConnectionFactory();
+            cf.Ssl = new SslOption()
+            {
+                Version = SslProtocols.Tls,
+                AcceptablePolicyErrors = SslPolicyErrors.RemoteCertificateNotAvailable |
+                                         SslPolicyErrors.RemoteCertificateNameMismatch,
+                CertPath = null,
+                Enabled = true,
+            };
             SendReceive(cf);
         }
     }
