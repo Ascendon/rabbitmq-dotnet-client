@@ -20,7 +20,6 @@
     </msbuild>
     
     <nugetpack target="Builds\RabbitMQ.Client.nuspec" version="${version}" feed="csg.oss.nuget" />
-    <nugetpush nupkgdir="Artifacts\Publish\csg.oss.nuget" apikey="${csg.oss.nuget.apikey}" source="${csg.oss.nuget}" />
   </target>
 
 </project>
