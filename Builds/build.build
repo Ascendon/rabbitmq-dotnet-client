@@ -4,23 +4,24 @@
   
   <loadtasks assembly="C:\Program Files\CSG\DevTools\Lib\NAnt\Dev.NAnt.Tasks.dll" />
   
-  <initproperty name="version" default="${version::from-tag()}" />
-  <fail if="${version == ''}" message="Either tag the commit or explicitly specify the version" />
+  <initproperty name="version.assembly" default="${version::assembly-from-tag()}" />
+  <initproperty name="version.package" default="${version::package-from-tag()}" />
+  <fail if="${version.package == '' or version.assembly == ''}" 
+        message="Either tag the commit or explicitly specify version.package and version.assembly from the command line" />
   
   <target name="run">
     <nuget action="restore" />
     <msbuild project="RabbitMQDotNetClient.sln">
       <properties>
         <property name="PropTargetFramework" value="v4.0" />
-        <property name="PropAssemblyVersion" value="${version}" />
+        <property name="PropAssemblyVersion" value="${version.assembly}" />
         <property name="PropUsingMono" value="false" />
         <property name="PropKeyfile" value="RabbitMQClient.snk" />
         <property name="PropBuildWcf" value="true" />
       </properties>
     </msbuild>
     
-    <nugetpack target="Builds\RabbitMQ.Client.nuspec" version="${version}" feed="csg.oss.nuget" />
-    <nugetpush nupkgdir="Artifacts\Publish\csg.oss.nuget" apikey="${csg.oss.nuget.apikey}" source="${csg.oss.nuget}" />
+    <nugetpack target="Builds\RabbitMQ.Client.nuspec" version="${version.package}" feed="csg.oss.nuget" />
   </target>
 
 </project>
