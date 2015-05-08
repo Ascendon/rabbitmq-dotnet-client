@@ -95,6 +95,7 @@
     <Compile Include="src\unit\TestChannelAllocation.cs" />
     <Compile Include="src\unit\TestConfirmSelect.cs" />
     <Compile Include="src\unit\TestConnectionBlocked.cs" />
+    <Compile Include="src\unit\TestConnectionChurnHandleLeak.cs" />
     <Compile Include="src\unit\TestConnectionFactory.cs" />
     <Compile Include="src\unit\TestConnectionRecovery.cs" />
     <Compile Include="src\unit\TestConnectionShutdown.cs" />
@@ -109,6 +110,7 @@
     <Compile Include="src\unit\TestExtensions.cs" />
     <Compile Include="src\unit\TestFieldTableFormatting.cs" />
     <Compile Include="src\unit\TestFieldTableFormattingGeneric.cs" />
+    <Compile Include="src\unit\TestHeartbeats.cs" />    
     <Compile Include="src\unit\TestIntAllocator.cs" />
     <Compile Include="src\unit\TestInvalidAck.cs" />
     <Compile Include="src\unit\TestMainLoop.cs" />
