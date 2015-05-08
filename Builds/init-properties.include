@@ -1,0 +1,3 @@
+<project>
+  <initproperty name="build.branch.default" default="csg/release/3.5.2-beta" envvar="bamboo_build_branch_default" overwrite="true" />
+</project>
