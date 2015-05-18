@@ -38,26 +38,33 @@
 //  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using NUnit.Framework;
+using RabbitMQ.Client.Exceptions;
+using System;
+using System.Diagnostics;
+using System.Threading;
 
-// General Information about an assembly is controlled through the following
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-[assembly: AssemblyTitle("SendMap")]
-[assembly: AssemblyDescription("SendMapExample")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("GoPivotal, Inc.")]
-[assembly: AssemblyProduct("RabbitMQ.Client")]
-[assembly: AssemblyCopyright("Copyright © 2007-2014 GoPivotal, Inc.")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-
-// Setting ComVisible to false makes the types in this assembly not visible
-// to COM components.  If you need to access a type in this assembly from
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
-
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("43C9D967-C555-45bf-9976-E0CDFE61CC2C")]
+namespace RabbitMQ.Client.Unit
+{
+    [TestFixture]
+    public class TestConnectionChurnHandleLeak : IntegrationFixture
+    {
+        [Test]
+        public void TestHandleLeak()
+        {
+            var cf = new ConnectionFactory();
+            var me = Process.GetCurrentProcess();
+            var n = me.HandleCount;
+            Console.WriteLine("{0} handles before the test...", me.HandleCount);
+            for (var i = 0; i < 1000; i++)
+            {
+                using (var conn = cf.CreateConnection())
+                {
+                }
+            }
+            Thread.Sleep(TimeSpan.FromSeconds(10));
+            Console.WriteLine("{0} handles after the test...", me.HandleCount);
+            Assert.That(me.HandleCount, Is.LessThanOrEqualTo(n));
+        }
+    }
+}
