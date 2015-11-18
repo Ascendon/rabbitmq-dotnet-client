@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (C) 2007-2015 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 using RabbitMQ.Client;
@@ -163,7 +163,7 @@ namespace RabbitMQ.Client
         /// operation to complete. This method will not return to the
         /// caller until the shutdown is complete.
         /// In comparison to normal <see cref="Close()"/> method, <see cref="Abort()"/> will not throw
-        /// <see cref="Exceptions.AlreadyClosedException"/> or <see cref="IOException"/> during closing model.
+        /// <see cref="Exceptions.AlreadyClosedException"/> or <see cref="IOException"/> or any other <see cref="Exception"/> during closing model.
         /// </remarks>
         [AmqpMethodDoNotImplement(null)]
         void Abort();

@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (C) 2007-2015 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 using System;
@@ -154,6 +154,18 @@ namespace RabbitMQ.Client.Impl
 
         public void Transmit(int channelNumber, Connection connection)
         {
+            if(Method.HasContent)
+            {
+                TransmitAsFrameSet(channelNumber, connection);
+            }
+            else
+            {
+                TransmitAsSingleFrame(channelNumber, connection);
+            }
+        }
+
+        public void TransmitAsSingleFrame(int channelNumber, Connection connection)
+        {
             var frame = new Frame(Constants.FrameMethod, channelNumber);
             NetworkBinaryWriter writer = frame.GetWriter();
             writer.Write((ushort)Method.ProtocolClassId);
@@ -162,6 +174,20 @@ namespace RabbitMQ.Client.Impl
             Method.WriteArgumentsTo(argWriter);
             argWriter.Flush();
             connection.WriteFrame(frame);
+        }
+
+        public void TransmitAsFrameSet(int channelNumber, Connection connection)
+        {
+            var frame = new Frame(Constants.FrameMethod, channelNumber);
+            NetworkBinaryWriter writer = frame.GetWriter();
+            writer.Write((ushort)Method.ProtocolClassId);
+            writer.Write((ushort)Method.ProtocolMethodId);
+            var argWriter = new MethodArgumentWriter(writer);
+            Method.WriteArgumentsTo(argWriter);
+            argWriter.Flush();
+
+            var frames = new List<Frame>();
+            frames.Add(frame);
 
             if (Method.HasContent)
             {
@@ -171,7 +197,7 @@ namespace RabbitMQ.Client.Impl
                 writer = frame.GetWriter();
                 writer.Write((ushort)Header.ProtocolClassId);
                 Header.WriteTo(writer, (ulong)body.Length);
-                connection.WriteFrame(frame);
+                frames.Add(frame);
 
                 var frameMax = (int)Math.Min(int.MaxValue, connection.FrameMax);
                 int bodyPayloadMax = (frameMax == 0)
@@ -185,9 +211,11 @@ namespace RabbitMQ.Client.Impl
                     writer = frame.GetWriter();
                     writer.Write(body, offset,
                         (remaining < bodyPayloadMax) ? remaining : bodyPayloadMax);
-                    connection.WriteFrame(frame);
+                    frames.Add(frame);
                 }
             }
+
+            connection.WriteFrameSet(frames);
         }
     }
 }

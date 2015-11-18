@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (C) 2007-2015 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 using NUnit.Framework;
@@ -50,9 +50,27 @@ namespace RabbitMQ.Client.Unit
     public class TestConnectionChurnHandleLeak : IntegrationFixture
     {
         [Test]
-        public void TestHandleLeak()
+        public void TestHandleLeakWithDisabledHeartbeats()
         {
-            var cf = new ConnectionFactory();
+            var cf = new ConnectionFactory()
+            {
+                RequestedHeartbeat = 0
+            };
+            PerformLeakTest(cf);
+        }
+
+        [Test]
+        public void TestHandleLeakWithEnabledHeartbeats()
+        {
+            var cf = new ConnectionFactory()
+            {
+                RequestedHeartbeat = 16
+            };
+            PerformLeakTest(cf);
+        }
+
+        protected void PerformLeakTest(ConnectionFactory cf)
+        {
             var me = Process.GetCurrentProcess();
             var n = me.HandleCount;
             Console.WriteLine("{0} handles before the test...", me.HandleCount);
@@ -62,9 +80,13 @@ namespace RabbitMQ.Client.Unit
                 {
                 }
             }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
             Thread.Sleep(TimeSpan.FromSeconds(10));
             Console.WriteLine("{0} handles after the test...", me.HandleCount);
-            Assert.That(me.HandleCount, Is.LessThanOrEqualTo(n));
+            // allow for a 20% margin of error, as GC behaviour and native handle
+            // release is difficult to predict
+            Assert.That(me.HandleCount, Is.LessThanOrEqualTo(n + 200));
         }
     }
 }

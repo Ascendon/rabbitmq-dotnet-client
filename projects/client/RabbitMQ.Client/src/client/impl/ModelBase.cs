@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (C) 2007-2015 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 using RabbitMQ.Client.Events;
@@ -300,18 +300,25 @@ namespace RabbitMQ.Client.Impl
                 k.Wait();
                 ConsumerDispatcher.Shutdown(this);
             }
-            catch (AlreadyClosedException ace)
+            catch (AlreadyClosedException)
             {
                 if (!abort)
                 {
-                    throw ace;
+                    throw;
                 }
             }
-            catch (IOException ioe)
+            catch (IOException)
             {
                 if (!abort)
                 {
-                    throw ioe;
+                    throw;
+                }
+            }
+            catch (Exception)
+            {
+                if (!abort)
+                {
+                    throw;
                 }
             }
         }
@@ -673,7 +680,7 @@ namespace RabbitMQ.Client.Impl
 
         void IDisposable.Dispose()
         {
-            Close();
+            Abort();
         }
 
         public abstract void ConnectionTuneOk(ushort channelMax,

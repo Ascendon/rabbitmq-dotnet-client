@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (C) 2007-2015 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
 using RabbitMQ.Client.Exceptions;
@@ -43,6 +43,7 @@ using RabbitMQ.Util;
 using System;
 using System.IO;
 using System.Net;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 
@@ -50,12 +51,12 @@ namespace RabbitMQ.Client.Impl
 {
     public class SocketFrameHandler : IFrameHandler
     {
-        // ^^ System.Net.Sockets.SocketError doesn't exist in .NET 1.1
-
         // Timeout in seconds to wait for a clean socket close.
         public const int SOCKET_CLOSING_TIMEOUT = 1;
-
-        public const int WSAEWOULDBLOCK = 10035;
+        // Socket poll timeout in ms. If the socket does not
+        // become writeable in this amount of time, we throw
+        // an exception.
+        protected int m_writeableStateTimeout = 30000;
 
         public NetworkBinaryReader m_reader;
         public TcpClient m_socket;
@@ -94,6 +95,7 @@ namespace RabbitMQ.Client.Impl
             }
 
             Stream netstream = m_socket.GetStream();
+            // make sure the socket timeout is greater than heartbeat timeout
             netstream.ReadTimeout = timeout;
             netstream.WriteTimeout = timeout;
 
@@ -143,7 +145,9 @@ namespace RabbitMQ.Client.Impl
                 {
                     if (m_socket.Connected)
                     {
-                        m_socket.ReceiveTimeout = value;
+                        // make sure the socket timeout is greater than heartbeat interval
+                        m_socket.ReceiveTimeout = value * 4;
+                        m_writeableStateTimeout = value * 4;
                     }
                 }
 #pragma warning disable 0168
@@ -163,7 +167,13 @@ namespace RabbitMQ.Client.Impl
                 {
                     try
                     {
-                        m_socket.LingerState = new LingerOption(true, SOCKET_CLOSING_TIMEOUT);
+                        try
+                        {
+                            
+                        } catch (ArgumentException _)
+                        {
+                            // ignore, we are closing anyway
+                        };
                         m_socket.Close();
                     }
                     catch (Exception _)
@@ -213,7 +223,29 @@ namespace RabbitMQ.Client.Impl
         {
             lock (m_writer)
             {
+                m_socket.Client.Poll(m_writeableStateTimeout, SelectMode.SelectWrite);
                 frame.WriteTo(m_writer);
+                m_writer.Flush();
+            }
+        }
+
+        public void WriteFrameSet(IList<Frame> frames)
+        {
+            lock (m_writer)
+            {
+                m_socket.Client.Poll(m_writeableStateTimeout, SelectMode.SelectWrite);
+                foreach(var f in frames)
+                {
+                    f.WriteTo(m_writer);
+                }
+                m_writer.Flush();
+            }
+        }
+
+        public void Flush()
+        {
+            lock (m_writer)
+            {
                 m_writer.Flush();
             }
         }

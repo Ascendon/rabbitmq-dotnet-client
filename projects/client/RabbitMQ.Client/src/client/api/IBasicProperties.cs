@@ -4,7 +4,7 @@
 // The APL v2.0:
 //
 //---------------------------------------------------------------------------
-//   Copyright (C) 2007-2014 GoPivotal, Inc.
+//   Copyright (C) 2007-2015 Pivotal Software, Inc.
 //
 //   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
@@ -35,9 +35,10 @@
 //  The Original Code is RabbitMQ.
 //
 //  The Initial Developer of the Original Code is GoPivotal, Inc.
-//  Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
+//  Copyright (c) 2007-2015 Pivotal Software, Inc.  All rights reserved.
 //---------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 
 namespace RabbitMQ.Client
@@ -104,6 +105,11 @@ namespace RabbitMQ.Client
         /// Application message Id.
         /// </summary>
         string MessageId { get; set; }
+
+        /// <summary>
+        /// Sets <see cref="DeliveryMode"/> to either persistent (2) or non-persistent (1).
+        /// </summary>
+        bool Persistent { get; set; }
 
         /// <summary>
         /// Message priority, 0 to 9.
@@ -290,6 +296,7 @@ namespace RabbitMQ.Client
         /// In order to reset <see cref="DeliveryMode"/> to the default empty condition, call <see cref="ClearDeliveryMode"/> .
         /// </para>
         /// </remarks>
+        [Obsolete("Usage of this setter method is deprecated. Use the Persistent property instead.")]
         void SetPersistent(bool persistent);
     }
 }
